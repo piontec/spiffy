@@ -1,12 +1,13 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <spiffs.h>
+#include <errno.h>
+#include <limits.h>
+#include <stdio.h>
+
 
 #define SPI_FLASH_SEC_SIZE 4096
 #define LOG_PAGE_SIZE       256
-
-//16k
-#define MAX_SIZE 4*4*1024
 
 #define FILEDIR "files"
 #define ROMNAME "spiff_rom.bin"
@@ -103,10 +104,10 @@ static s32_t my_spiffs_erase(u32_t addr, u32_t size) {
 
 
 
-void my_spiffs_mount() {
+void my_spiffs_mount(int rom_size) {
   spiffs_config cfg;
 
-  cfg.phys_size = MAX_SIZE; // use all spi flash
+  cfg.phys_size = rom_size; // use all spi flash
   cfg.phys_addr = 0; // start spiffs at start of spi flash
 
   cfg.phys_erase_block = SPI_FLASH_SEC_SIZE;
@@ -204,18 +205,45 @@ void add_file(char* fname) {
 
 }
 
+int get_rom_size (char *str) {
+    char *endptr;
+    long val;
+
+    errno = 0; 
+    val = strtol(str, &endptr, 10);
+
+    if ((errno == ERANGE && (val == LONG_MAX || val == LONG_MIN)) || (errno != 0 && val == 0)) {
+       perror("strtol");
+       exit(EXIT_FAILURE);
+    } 
+
+    if (endptr == str) {
+        fprintf(stderr, "No digits were found\n");
+        exit(EXIT_FAILURE);
+    }
+
+    return (int) val;
+}
+
 
 int main(int argc, char **args) {
+   
+    if (argc != 2) {
+        printf ("Usage: %s spiffs_size_in_kB\n", args[0]);
+        exit (EXIT_FAILURE);
+    }
+
+    const int rom_size = get_rom_size (args [1]);
 
     rom = fopen(ROMNAME,"w+");
     int i;
-    for(i=0; i < MAX_SIZE; i++) {
+    for(i=0; i < rom_size; i++) {
         fputc(ROMERASE,rom);
     }
     fflush(rom);
 
-    my_spiffs_mount();
-    printf("Creating rom %s of size %d bytes\n", ROMNAME, MAX_SIZE);
+    my_spiffs_mount(rom_size);
+    printf("Creating rom %s of size %d bytes\n", ROMNAME, rom_size);
 
 
     printf("Adding files in directory %s\n", FILEDIR);
