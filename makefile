@@ -70,19 +70,18 @@ $(OBJFILES) : ${builddir}/%.o:%.c
 
 # make dependencies
 $(DEPFILES) : ${builddir}/%.d:%.c
+	        -@${MKDIR} ${builddir}
 		@echo "... depend $@"; \
 		rm -f $@; \
 		${CC} $(COMPILEROPTIONS) -M $< > $@.$$$$; \
 		sed 's,\($*\)\.o[ :]*, ${builddir}/\1.o $@ : ,g' < $@.$$$$ > $@; \
 		rm -f $@.$$$$
 
-all: mkdirs $(BINARY) 
-
-mkdirs:
-	-@${MKDIR} ${builddir}
+all: $(BINARY) 
 
 clean:
 	@echo ... removing build files in ${builddir}
 	@rm -f ${builddir}/*.o
 	@rm -f ${builddir}/*.d
 	@rm -f ${builddir}/*.elf
+	@rm -f ${builddir}/spiffy
