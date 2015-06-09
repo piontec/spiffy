@@ -1,4 +1,5 @@
 BINARY = spiffy
+INSTALL_PATH?=/usr/local/bin/
 
 ############
 #
@@ -85,3 +86,9 @@ clean:
 	@rm -f ${builddir}/*.d
 	@rm -f ${builddir}/*.elf
 	@rm -f ${builddir}/spiffy
+
+install: all
+	install $(builddir)/$(BINARY) $(INSTALL_PATH)
+
+uninstall:
+	rm $(INSTALL_PATH)/$(BINARY)
